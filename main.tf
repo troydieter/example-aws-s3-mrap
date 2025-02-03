@@ -24,17 +24,6 @@ provider "aws" {
   }
 }
 
-variable "vpc" {
-  type        = string
-  description = "VPC to deploy test instance to"
-}
-
-variable "ami" {
-  type = string
-  description = "AMI to use"
-  default = "ami-0c614dee691cbbf37"
-}
-
 data "external" "current_ip" {
   program = ["powershell", "-Command", "(Invoke-WebRequest -Uri 'https://ifconfig.io').Content.Trim() | ConvertTo-Json -Compress | % { '{\"ip\":\"' + ($_ -replace '\"','') + '/32\"}' }"]
 }
@@ -46,7 +35,7 @@ resource "aws_s3_bucket" "primary_bucket" {
   bucket_prefix =    "primary-bucket"
 }
 
-resource "aws_s3_bucket" "sec_bucket" {
+resource "aws_s3_bucket" "secondary_bucket" {
   provider = aws.secondary_region
   bucket_prefix =    "secondary-bucket"
 }
@@ -60,7 +49,7 @@ resource "aws_s3control_multi_region_access_point" "example" {
     }
 
     region {
-      bucket = aws_s3_bucket.sec_bucket.id
+      bucket = aws_s3_bucket.secondary_bucket.id
     }
   }
 }
@@ -131,17 +120,8 @@ resource "aws_iam_policy" "bucket_full_access" {
         Effect   = "Allow",
         Action   = "s3:*",
         Resource = [
-          aws_s3_bucket.primary_bucket.arn,
+          "${aws_s3_bucket.primary_bucket.arn}",
           "${aws_s3_bucket.primary_bucket.arn}/*"
-        ]
-      },
-      {
-        Sid      = "FullAccessTosecondaryBucket",
-        Effect   = "Allow",
-        Action   = "s3:*",
-        Resource = [
-          aws_s3_bucket.secondary_bucket.arn,
-          "${aws_s3_bucket.secondary_bucket.arn}/*"
         ]
       },
       {

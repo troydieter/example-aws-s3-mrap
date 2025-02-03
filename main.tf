@@ -155,6 +155,10 @@ resource "aws_iam_instance_profile" "ec2_ssm" {
   role = aws_iam_role.example-role.name
 }
 
+data "aws_region" "current" {
+
+}
+
 resource "aws_instance" "test_instance" {
   provider                    = aws.primary_region
   ami                         = var.ami

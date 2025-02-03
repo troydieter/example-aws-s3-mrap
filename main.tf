@@ -174,18 +174,28 @@ resource "aws_instance" "test_instance" {
 
   user_data = <<-EOF
             #!/bin/bash
+            set -eux  # Enable debugging and stop script on first error
+
             yum update -y
             yum install -y python3-pip git
             pip3 install boto3 requests awscrt
-            
+
             export MRAP_ALIAS="${aws_s3control_multi_region_access_point.example.alias}"
             export AWS_REGION="${data.aws_region.current.name}"
 
             # Create the Python script for SigV4ASign
-            echo "${file("sigv4a_sign.py")}" > /home/ec2-user/sigv4a_sign.py
+            cat <<PYTHON_EOF > /home/ec2-user/sigv4a_sign.py
+            ${file("sigv4a_sign.py")}
+            PYTHON_EOF
 
             # Create the Python script for testing MRAP
-            echo "${file("test_mrap.py")}" > /home/ec2-user/test_mrap.py
+            cat <<PYTHON_EOF > /home/ec2-user/test_mrap.py
+            ${file("test_mrap.py")}
+            PYTHON_EOF
+
+            # Set correct permissions
+            chmod +x /home/ec2-user/*.py
+            chown ec2-user:ec2-user /home/ec2-user/*.py
 
             echo "Setup complete. Ready to test MRAP."
   EOF

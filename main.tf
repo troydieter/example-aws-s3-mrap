@@ -169,14 +169,14 @@ resource "aws_instance" "test_instance" {
   }
 
   user_data = <<-EOF
-              #!/bin/bash
-              yum update -y
-              yum install -y python3-pip git
-              pip3 install boto3 requests
-              
-              MRAP_ALIAS="${aws_s3control_multi_region_access_point.example.alias}"
+            #!/bin/bash
+            yum update -y
+            yum install -y python3-pip git
+            pip3 install boto3 requests
+            
+            MRAP_ALIAS="${aws_s3control_multi_region_access_point.example.alias}"
 
-              cat <<EOT > /home/ec2-user/sigv4a_sign.py
+            cat <<EOT > /home/ec2-user/sigv4a_sign.py
                 import boto3
                 import botocore.auth
                 import botocore.session
@@ -196,9 +196,9 @@ resource "aws_instance" "test_instance" {
                         signer = botocore.auth.SigV4Auth(self.credentials, service, region)
                         signer.add_auth(request)
                         return dict(request.headers)
-              EOT
+            EOT
 
-              cat <<EOT > /home/ec2-user/test_mrap.py
+            cat <<EOT > /home/ec2-user/test_mrap.py
               from sigv4a_sign import SigV4ASign
               import requests
 
@@ -220,5 +220,5 @@ resource "aws_instance" "test_instance" {
               EOT
 
               echo "Setup complete. Ready to test MRAP."
-              EOF
+            EOF
 }

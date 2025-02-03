@@ -5,10 +5,10 @@ resource "random_id" "rando" {
 provider "aws" {
   region = "us-east-1"
   alias  = "primary_region"
-    default_tags {
+  default_tags {
     tags = {
-      "project"     = "example-aws-s3-mrap"
-      "id"          = random_id.rando.hex
+      "project" = "example-aws-s3-mrap"
+      "id"      = random_id.rando.hex
     }
   }
 }
@@ -16,10 +16,10 @@ provider "aws" {
 provider "aws" {
   region = "us-east-2"
   alias  = "secondary_region"
-      default_tags {
+  default_tags {
     tags = {
-      "project"     = "example-aws-s3-mrap"
-      "id"          = random_id.rando.hex
+      "project" = "example-aws-s3-mrap"
+      "id"      = random_id.rando.hex
     }
   }
 }
@@ -31,13 +31,13 @@ data "external" "current_ip" {
 ########################
 
 resource "aws_s3_bucket" "primary_bucket" {
-  provider = aws.primary_region
-  bucket_prefix =    "primary-bucket"
+  provider      = aws.primary_region
+  bucket_prefix = "primary-bucket"
 }
 
 resource "aws_s3_bucket" "secondary_bucket" {
-  provider = aws.secondary_region
-  bucket_prefix =    "secondary-bucket"
+  provider      = aws.secondary_region
+  bucket_prefix = "secondary-bucket"
 }
 
 resource "aws_s3control_multi_region_access_point" "example" {
@@ -55,10 +55,12 @@ resource "aws_s3control_multi_region_access_point" "example" {
 }
 
 data "aws_vpc" "selected" {
-  id = var.vpc
+  provider = aws.primary_region
+  id       = var.vpc
 }
 
 data "aws_subnets" "all" {
+  provider = aws.primary_region
   filter {
     name   = "tag:Reach"
     values = ["public"]
@@ -66,14 +68,14 @@ data "aws_subnets" "all" {
 }
 
 resource "aws_security_group" "ec2_sg" {
-  provider = aws.primary_region
-  name     = "ec2-sg"
-  vpc_id   = data.aws_vpc.selected.id # Replace with your VPC ID
+  provider    = aws.primary_region
+  name_prefix = "example-aws-s3-mrap"
+  vpc_id      = data.aws_vpc.selected.id # Replace with your VPC ID
 
   ingress {
-    from_port   = 22
-    to_port     = 22
-    protocol    = "tcp"
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
     cidr_blocks = [data.external.current_ip.result.ip]
   }
 
@@ -116,18 +118,18 @@ resource "aws_iam_policy" "bucket_full_access" {
     Version = "2012-10-17",
     Statement = [
       {
-        Sid      = "FullAccessToprimaryBucket",
-        Effect   = "Allow",
-        Action   = "s3:*",
+        Sid    = "FullAccessToprimaryBucket",
+        Effect = "Allow",
+        Action = "s3:*",
         Resource = [
           "${aws_s3_bucket.primary_bucket.arn}",
           "${aws_s3_bucket.primary_bucket.arn}/*"
         ]
       },
       {
-        Sid      = "FullAccessToMRAP",
-        Effect   = "Allow",
-        Action   = "s3:*",
+        Sid    = "FullAccessToMRAP",
+        Effect = "Allow",
+        Action = "s3:*",
         Resource = [
           "arn:aws:s3:::${aws_s3control_multi_region_access_point.example.alias}",
           "arn:aws:s3:::${aws_s3control_multi_region_access_point.example.alias}/*"
@@ -154,13 +156,13 @@ resource "aws_iam_instance_profile" "ec2_ssm" {
 }
 
 resource "aws_instance" "test_instance" {
-  provider          = aws.primary_region
-  ami              = var.ami
-  instance_type    = "t3.micro"
-  security_groups  = [aws_security_group.ec2_sg.name]
+  provider                    = aws.primary_region
+  ami                         = var.ami
+  instance_type               = "t3.micro"
+  security_groups             = [aws_security_group.ec2_sg.name]
   associate_public_ip_address = true
-  key_name         = "example-aws-s3-mrap" # Replace with your key pair name
-  iam_instance_profile = aws_iam_instance_profile.ec2_ssm.name
+  key_name                    = "example-aws-s3-mrap" # Replace with your key pair name
+  iam_instance_profile        = aws_iam_instance_profile.ec2_ssm.name
 
   user_data = <<-EOF
               #!/bin/bash

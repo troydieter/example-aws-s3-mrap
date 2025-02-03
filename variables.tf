@@ -4,7 +4,7 @@ variable "vpc" {
 }
 
 variable "ami" {
-  type = string
+  type        = string
   description = "AMI to use"
-  default = "ami-0c614dee691cbbf37"
+  default     = "ami-0c614dee691cbbf37"
 }

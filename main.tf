@@ -155,6 +155,8 @@ resource "aws_iam_instance_profile" "ec2_ssm" {
   role = aws_iam_role.example-role.name
 }
 
+data "aws_region" "current" {}
+
 resource "aws_instance" "test_instance" {
   provider                    = aws.primary_region
   ami                         = var.ami
@@ -172,9 +174,10 @@ resource "aws_instance" "test_instance" {
             #!/bin/bash
             yum update -y
             yum install -y python3-pip git
-            pip3 install boto3 requests
+            pip3 install boto3 requests awscrt
             
             MRAP_ALIAS="${aws_s3control_multi_region_access_point.example.alias}"
+            AWS_REGION="${data.aws_region.current.name}"
 
             # Create the Python script for SigV4ASign
             echo '${file("sigv4a_sign.py")}' > /home/ec2-user/sigv4a_sign.py

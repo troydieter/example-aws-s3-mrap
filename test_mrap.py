@@ -2,7 +2,7 @@ from sigv4a_sign import SigV4ASign
 import requests
 
 service = 's3'
-region = '*'
+region = f'$AWS_REGION'
 method = 'PUT'
 url = f'https://$MRAP_ALIAS.accesspoint.s3-global.amazonaws.com/test-object'
 data = 'hello world'

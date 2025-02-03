@@ -127,12 +127,30 @@ resource "aws_iam_policy" "bucket_full_access" {
     Version = "2012-10-17",
     Statement = [
       {
-        Sid    = "FullAccessToBucket",
-        Effect = "Allow",
-        Action = "s3:*",
+        Sid      = "FullAccessToprimaryBucket",
+        Effect   = "Allow",
+        Action   = "s3:*",
         Resource = [
-          module.s3_bucket.s3_bucket_arn,
-          "${module.s3_bucket.s3_bucket_arn}/*"
+          aws_s3_bucket.primary_bucket.arn,
+          "${aws_s3_bucket.primary_bucket.arn}/*"
+        ]
+      },
+      {
+        Sid      = "FullAccessTosecondaryBucket",
+        Effect   = "Allow",
+        Action   = "s3:*",
+        Resource = [
+          aws_s3_bucket.secondary_bucket.arn,
+          "${aws_s3_bucket.secondary_bucket.arn}/*"
+        ]
+      },
+      {
+        Sid      = "FullAccessToMRAP",
+        Effect   = "Allow",
+        Action   = "s3:*",
+        Resource = [
+          "arn:aws:s3:::${aws_s3control_multi_region_access_point.example.alias}",
+          "arn:aws:s3:::${aws_s3control_multi_region_access_point.example.alias}/*"
         ]
       }
     ]

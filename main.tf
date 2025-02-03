@@ -159,7 +159,8 @@ resource "aws_instance" "test_instance" {
   provider                    = aws.primary_region
   ami                         = var.ami
   instance_type               = "t3.micro"
-  security_groups             = [aws_security_group.ec2_sg.name]
+  vpc_security_group_ids      = [aws_security_group.ec2_sg.id]
+  subnet_id                   = tolist(data.aws_subnets.all.ids)[0]
   associate_public_ip_address = true
   key_name                    = "example-aws-s3-mrap" # Replace with your key pair name
   iam_instance_profile        = aws_iam_instance_profile.ec2_ssm.name

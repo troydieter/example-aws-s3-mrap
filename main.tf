@@ -180,10 +180,10 @@ resource "aws_instance" "test_instance" {
             AWS_REGION="${data.aws_region.current.name}"
 
             # Create the Python script for SigV4ASign
-            echo '${file("sigv4a_sign.py")}' > /home/ec2-user/sigv4a_sign.py
+            echo "${file("sigv4a_sign.py")}" > /home/ec2-user/sigv4a_sign.py
 
             # Create the Python script for testing MRAP
-            echo '${file("test_mrap.py")}' > /home/ec2-user/test_mrap.py
+            echo "${file("test_mrap.py")}" > /home/ec2-user/test_mrap.py
 
             echo "Setup complete. Ready to test MRAP."
   EOF

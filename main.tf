@@ -165,7 +165,7 @@ resource "aws_instance" "test_instance" {
   key_name                    = "example-aws-s3-mrap" # Replace with your key pair name
   iam_instance_profile        = aws_iam_instance_profile.ec2_ssm.name
   tags = {
-    Name = "${random_id.rando.hex}-aws-s3-mrap-example"
+    Name = "aws-s3-mrap-example-${random_id.rando.hex}"
   }
 
   user_data = <<-EOF

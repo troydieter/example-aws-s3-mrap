@@ -3,6 +3,7 @@ import botocore.auth
 import botocore.session
 import botocore.awsrequest
 
+
 class SigV4ASign:
     def __init__(self, session=None):
         self.session = session or boto3.Session()

@@ -177,21 +177,25 @@ resource "aws_instance" "test_instance" {
               MRAP_ALIAS="${aws_s3control_multi_region_access_point.example.alias}"
 
               cat <<EOT > /home/ec2-user/sigv4a_sign.py
-              import boto3
-              import botocore.auth
-              import botocore.session
-              import requests
+                import boto3
+                import botocore.auth
+                import botocore.session
+                import botocore.awsrequest
 
-              class SigV4ASign:
-                  def __init__(self, session=None):
-                      self.session = session or boto3.Session()
-                      self.credentials = self.session.get_credentials()
+                class SigV4ASign:
+                    def __init__(self, session=None):
+                        self.session = session or boto3.Session()
+                        self.credentials = self.session.get_credentials()
 
-                  def get_headers_basic(self, service, region, method, url):
-                      request = botocore.awsrequest.AWSRequest(method=method, url=url)
-                      signer = botocore.auth.SigV4Auth(self.credentials, service, region)
-                      signer.add_auth(request)
-                      return dict(request.headers)
+                    def get_headers(self, service, region, request_config):
+                        request = botocore.awsrequest.AWSRequest(
+                            method=request_config['method'],
+                            url=request_config['url'],
+                            data=request_config.get('data', None)
+                        )
+                        signer = botocore.auth.SigV4Auth(self.credentials, service, region)
+                        signer.add_auth(request)
+                        return dict(request.headers)
               EOT
 
               cat <<EOT > /home/ec2-user/test_mrap.py

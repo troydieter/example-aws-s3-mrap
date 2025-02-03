@@ -111,7 +111,7 @@ resource "aws_iam_role" "example-role" {
 }
 
 resource "aws_iam_policy" "bucket_full_access" {
-  name        = "bucket-full-access"
+  name        = "bucket-full-access-${random_id.rando.hex}"
   description = "Allows all actions on the S3 bucket defined in module.s3_bucket"
 
   policy = jsonencode({
@@ -164,6 +164,9 @@ resource "aws_instance" "test_instance" {
   associate_public_ip_address = true
   key_name                    = "example-aws-s3-mrap" # Replace with your key pair name
   iam_instance_profile        = aws_iam_instance_profile.ec2_ssm.name
+  tags = {
+    Name = "${random_id.rando.hex}-aws-s3-mrap-example"
+  }
 
   user_data = <<-EOF
               #!/bin/bash

@@ -65,10 +65,21 @@ resource "aws_s3control_multi_region_access_point" "example" {
   }
 }
 
+data "aws_vpc" "selected" {
+  id = var.vpc
+}
+
+data "aws_subnets" "all" {
+  filter {
+    name   = "tag:Reach"
+    values = ["public"]
+  }
+}
+
 resource "aws_security_group" "ec2_sg" {
   provider = aws.primary_region
   name     = "ec2-sg"
-  vpc_id   = var.vpc # Replace with your VPC ID
+  vpc_id   = data.aws_vpc.selected.id # Replace with your VPC ID
 
   ingress {
     from_port   = 22
@@ -85,12 +96,73 @@ resource "aws_security_group" "ec2_sg" {
   }
 }
 
+# SSM
+data "aws_iam_policy" "required-policy" {
+  name = "AmazonSSMManagedInstanceCore"
+}
+
+# IAM Role
+resource "aws_iam_role" "example-role" {
+  name = "example-${random_id.rando.hex}"
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Sid    = ""
+        Principal = {
+          Service = "ec2.amazonaws.com"
+        }
+      }
+    ]
+  })
+}
+
+resource "aws_iam_policy" "bucket_full_access" {
+  name        = "bucket-full-access"
+  description = "Allows all actions on the S3 bucket defined in module.s3_bucket"
+
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Sid    = "FullAccessToBucket",
+        Effect = "Allow",
+        Action = "s3:*",
+        Resource = [
+          module.s3_bucket.s3_bucket_arn,
+          "${module.s3_bucket.s3_bucket_arn}/*"
+        ]
+      }
+    ]
+  })
+}
+
+# Attach the policy to the role
+resource "aws_iam_role_policy_attachment" "attach-ssm" {
+  role       = aws_iam_role.example-role.name
+  policy_arn = data.aws_iam_policy.required-policy.arn
+}
+
+resource "aws_iam_role_policy_attachment" "attach-s3" {
+  role       = aws_iam_role.example-role.name
+  policy_arn = aws_iam_policy.bucket_full_access.arn
+}
+
+resource "aws_iam_instance_profile" "ec2_ssm" {
+  name = "aws_ssm_example-${random_id.rando.hex}"
+  role = aws_iam_role.example-role.name
+}
+
 resource "aws_instance" "test_instance" {
   provider          = aws.primary_region
   ami              = var.ami
   instance_type    = "t3.micro"
   security_groups  = [aws_security_group.ec2_sg.name]
+  associate_public_ip_address = true
   key_name         = "example-aws-s3-mrap" # Replace with your key pair name
+  iam_instance_profile = aws_iam_instance_profile.ec2_ssm.name
 
   user_data = <<-EOF
               #!/bin/bash

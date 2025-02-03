@@ -181,7 +181,7 @@ resource "aws_instance" "test_instance" {
             pip3 install boto3 requests awscrt
 
             export MRAP_ALIAS="${aws_s3control_multi_region_access_point.example.alias}"
-            export AWS_REGION="${data.aws_region.current.name}"
+            export AWS_REGION="$(curl -s http://169.254.169.254/latest/meta-data/placement/region)"
 
             # Create the Python script for SigV4ASign
             cat <<PYTHON_EOF > /home/ec2-user/sigv4a_sign.py

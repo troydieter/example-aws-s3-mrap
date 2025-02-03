@@ -98,6 +98,8 @@ resource "aws_instance" "test_instance" {
               yum install -y python3-pip git
               pip3 install boto3 requests
               
+              MRAP_ALIAS="${aws_s3control_multi_region_access_point.example.alias}"
+
               cat <<EOT > /home/ec2-user/sigv4a_sign.py
               import boto3
               import botocore.auth
@@ -116,10 +118,27 @@ resource "aws_instance" "test_instance" {
                       return dict(request.headers)
               EOT
 
+              cat <<EOT > /home/ec2-user/test_mrap.py
+              from sigv4a_sign import SigV4ASign
+              import requests
+
+              service = 's3'
+              region = '*'
+              method = 'PUT'
+              url = f'https://$MRAP_ALIAS.accesspoint.s3-global.amazonaws.com/test-object'
+              data = 'hello world'
+
+              aws_request_config = {
+                  'method': 'PUT',
+                  'url': url,
+                  'data': data
+              }
+
+              headers = SigV4ASign().get_headers(service, region, aws_request_config)
+              r = requests.put(url, data=data, headers=headers)
+              print(f'status_code: {r.status_code}')
+              EOT
+
               echo "Setup complete. Ready to test MRAP."
               EOF
-
-  tags = {
-    Name = "MRAP-Test-Instance"
-  }
 }
